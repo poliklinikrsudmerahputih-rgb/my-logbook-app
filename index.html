@@ -23,7 +23,7 @@
             body { background: white; padding: 0; }
             .print-area { display: block !important; }
             @page { size: landscape; margin: 1cm; }
-            #rekap-table-container table { font-size: 9pt; width: 100%; }
+            #rekap-table-container table { font-size: 8pt; width: 100%; }
         }
     </style>
 </head>
@@ -56,8 +56,10 @@
                 <input type="date" id="tgl-cetak-manual" class="w-full bg-slate-700 p-2 rounded text-[10px] text-white">
                 <button onclick="renderRekap('matriks')" class="w-full bg-blue-600 p-2 rounded font-black text-[10px] uppercase">Bulanan</button>
                 <select id="sel-triwulan" class="w-full bg-slate-700 p-2 rounded text-[10px] text-white">
-                    <option value="1">Triwulan 1</option><option value="2">Triwulan 2</option>
-                    <option value="3">Triwulan 3</option><option value="4">Triwulan 4</option>
+                    <option value="1">Triwulan 1 (Jan-Mar)</option>
+                    <option value="2">Triwulan 2 (Apr-Jun)</option>
+                    <option value="3">Triwulan 3 (Jul-Sep)</option>
+                    <option value="4">Triwulan 4 (Okt-Des)</option>
                 </select>
                 <button onclick="renderRekap('triwulan')" class="w-full bg-emerald-600 p-2 rounded font-black text-[10px] uppercase">Triwulan</button>
                 <button onclick="renderRekap('tahunan')" class="w-full bg-amber-600 p-2 rounded font-black text-[10px] uppercase">Tahunan</button>
@@ -172,23 +174,10 @@
                 <div id="rekap-nav-controls" class="no-print flex flex-wrap gap-4 justify-between mb-8 bg-slate-100 p-4 rounded-xl border border-slate-200">
                     <div class="flex flex-wrap gap-2 items-center">
                         <h4 class="font-black uppercase mr-2 text-[10px] text-slate-500">Opsi Laporan:</h4>
-                        <select id="view-bulan" class="p-1 text-xs border rounded bg-white" onchange="syncAndRender('bulan')">
-                            <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
-                            <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
-                            <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
-                            <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
+                        <select id="view-mode-atasan" class="p-1 text-xs border rounded bg-white font-bold text-blue-600 uppercase" onchange="switchViewAtasan(this.value)">
+                            <option value="rekap">📄 Rekapitulasi</option>
+                            <option value="harian">📝 Detail Harian</option>
                         </select>
-                        <button onclick="renderRekap('matriks')" class="bg-blue-500 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-blue-600">BULANAN</button>
-                        <button onclick="renderRekap('triwulan')" class="bg-emerald-500 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-emerald-600">TRIWULAN</button>
-                        <button onclick="renderRekap('tahunan')" class="bg-amber-500 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-amber-600">TAHUNAN</button>
-                        
-                        <div class="ml-4 pl-4 border-l flex items-center gap-2">
-                            <h4 class="font-black uppercase text-[10px] text-slate-500">Tampilan:</h4>
-                            <select id="view-mode-atasan" class="p-1 text-xs border rounded bg-white font-bold text-blue-600 uppercase" onchange="switchViewAtasan(this.value)">
-                                <option value="rekap">📄 Rekapitulasi</option>
-                                <option value="harian">📝 Detail Harian</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="exportToExcel('rekap-table-container', 'Laporan_Logbook')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">Excel</button>
@@ -253,17 +242,12 @@
                 document.getElementById('sec-login').classList.remove('active');
                 document.getElementById('sidebar').classList.add('hidden');
                 document.getElementById('topbar').classList.add('hidden');
-                document.getElementById('rekap-nav-controls').classList.remove('hidden'); 
-                document.getElementById('btn-tutup-rekap').classList.add('hidden');
-
                 const { data: p } = await _supabase.from('profiles').select('*').eq('id', viewId).single();
                 if(p) {
                     profileData = p;
                     currentUser = { id: viewId };
                     const { data: km } = await _supabase.from('kamus_kegiatan').select('*').eq('user_id', viewId);
                     masterKamus = km || [];
-                    document.getElementById('view-bulan').value = new Date().getMonth();
-                    document.getElementById('sel-bulan').value = new Date().getMonth();
                     showSection('sec-rekap');
                     renderRekap('matriks');
                 }
@@ -294,7 +278,6 @@
         async function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            if(!email || !pass) return alert("Isi email dan password!");
             const { error } = await _supabase.auth.signInWithPassword({ email, password: pass });
             if (error) alert(error.message); else checkUser();
         }
@@ -302,20 +285,15 @@
         async function signUp() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            if(!email || pass.length < 6) return alert("Email valid & password min. 6 karakter!");
             const { error } = await _supabase.auth.signUp({ email, password: pass });
-            if (error) alert(error.message); else alert("Berhasil! Silakan cek email konfirmasi atau login.");
+            if (error) alert(error.message); else alert("Berhasil! Silakan cek email.");
         }
 
-        async function logout() {
-            await _supabase.auth.signOut();
-            location.reload();
-        }
+        async function logout() { await _supabase.auth.signOut(); location.reload(); }
 
         function showSection(id) {
             document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'sec-rekap') document.getElementById('rekap-nav-controls').classList.remove('hidden');
         }
 
         function copyShareLink() {
@@ -323,19 +301,11 @@
             navigator.clipboard.writeText(link).then(() => alert("Link Laporan Berhasil Disalin!"));
         }
 
-        function syncAndRender(type) {
-            if(type === 'bulan') {
-                document.getElementById('sel-bulan').value = document.getElementById('view-bulan').value;
-                renderRekap('matriks');
-            }
-        }
-
         async function switchViewAtasan(val) {
             if(val === 'harian') renderRekap('harian_print');
             else renderRekap('matriks');
         }
 
-        // --- DATA HANDLERS ---
         async function loadKamus() {
             const { data } = await _supabase.from('kamus_kegiatan').select('*').eq('user_id', currentUser.id).order('created_at');
             masterKamus = data || [];
@@ -429,12 +399,14 @@
             checkUser();
         }
 
-        // --- RENDER REKAP & PRINT LOGIC ---
         async function renderRekap(mode) {
             showSection('sec-rekap');
             const bln = parseInt(document.getElementById('sel-bulan').value);
             const thn = parseInt(document.getElementById('sel-tahun').value);
-            
+            const tw = parseInt(document.getElementById('sel-triwulan').value);
+            const listBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+            // Header Profil
             document.getElementById('r-org').innerText = profileData.instansi || '-';
             document.getElementById('r-nama').innerText = profileData.nama_lengkap || '-';
             document.getElementById('r-nip').innerText = profileData.nip || '-';
@@ -447,57 +419,97 @@
             document.getElementById('r-atasan-nip').innerText = profileData.atasan_nip || '-';
             document.getElementById('r-saya-nama').innerText = profileData.nama_lengkap || '-';
             document.getElementById('r-saya-nip').innerText = profileData.nip || '-';
-            
+
             const tglCetak = new Date(document.getElementById('tgl-cetak-manual').value);
             document.getElementById('r-tgl-cetak').innerText = `${profileData.kota || 'Kota'}, ${tglCetak.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`;
 
-            let query = _supabase.from('logbook_harian').select('*, kamus_kegiatan(nama_kegiatan)').eq('user_id', currentUser.id);
-            
-            if(mode === 'harian_print') {
-                document.getElementById('r-title').innerText = "RIWAYAT INPUT HARIAN";
-                document.getElementById('r-periode').innerText = `Harian - Periode: ${document.getElementById('sel-bulan').options[bln].text} ${thn}`;
-                query = query.gte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-31`).order('tanggal', {ascending: true});
-                
-                const { data: harianLogs } = await query;
-                let html = `<table><thead><tr><th>No</th><th>Tanggal</th><th>Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th></tr></thead><tbody>`;
-                (harianLogs || []).forEach((l, i) => {
-                    html += `<tr><td>${i+1}</td><td>${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan || 'Tanpa Nama'}</td><td>${l.no_rm}</td><td>${l.jam_mulai} - ${l.jam_selesai}</td><td>${l.qty}</td></tr>`;
-                });
-                html += `</tbody></table>`;
-                document.getElementById('rekap-table-container').innerHTML = html;
-                return;
-            }
+            let query = _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id);
+            let startDate, endDate;
 
-            if(mode==='matriks') {
+            if(mode === 'matriks') {
                 document.getElementById('r-title').innerText = "LAPORAN LOGBOOK BULANAN";
-                document.getElementById('r-periode').innerText = `Periode: ${document.getElementById('sel-bulan').options[bln].text} ${thn}`;
-                query = query.gte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-31`);
-            } else if(mode==='triwulan') {
-                const tri = parseInt(document.getElementById('sel-triwulan').value);
-                const mStart = (tri-1)*3 + 1; const mEnd = tri*3;
+                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
+                startDate = `${thn}-${String(bln+1).padStart(2,'0')}-01`;
+                endDate = `${thn}-${String(bln+1).padStart(2,'0')}-31`;
+            } else if(mode === 'triwulan') {
                 document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
-                document.getElementById('r-periode').innerText = `Triwulan ${tri} - Tahun ${thn}`;
-                query = query.gte('tanggal', `${thn}-${String(mStart).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(mEnd).padStart(2,'0')}-31`);
-            } else if(mode==='tahunan') {
+                const startM = (tw-1)*3;
+                document.getElementById('r-periode').innerText = `Triwulan ${tw} (${listBulan[startM]} - ${listBulan[startM+2]}) ${thn}`;
+                startDate = `${thn}-${String(startM+1).padStart(2,'0')}-01`;
+                endDate = `${thn}-${String(startM+3).padStart(2,'0')}-31`;
+            } else if(mode === 'tahunan') {
                 document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
-                document.getElementById('r-periode').innerText = `Tahun ${thn}`;
-                query = query.gte('tanggal', `${thn}-01-01`).lte('tanggal', `${thn}-12-31`);
+                document.getElementById('r-periode').innerText = `Periode Tahun: ${thn}`;
+                startDate = `${thn}-01-01`;
+                endDate = `${thn}-12-31`;
+            } else if(mode === 'harian_print') {
+                document.getElementById('r-title').innerText = "DETAIL HARIAN LOGBOOK";
+                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
+                startDate = `${thn}-${String(bln+1).padStart(2,'0')}-01`;
+                endDate = `${thn}-${String(bln+1).padStart(2,'0')}-31`;
             }
 
-            const { data: logs } = await query;
-            let html = `<table><thead><tr><th>No</th><th>Butir Kegiatan</th><th>Target Thn</th><th>Hasil Kerja</th><th>Capaian</th><th>Bukti</th></tr></thead><tbody>`;
-            masterKamus.forEach((k, i) => {
-                const total = (logs || []).filter(l => l.kegiatan_id === k.id).reduce((sum, item) => sum + item.qty, 0);
-                html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td><td>${k.target_tahunan}</td><td>${k.hasil_kerja}</td><td class="font-bold">${total}</td><td><a href="${k.link_bukti_dukung}" target="_blank" class="text-blue-600">Link</a></td></tr>`;
-            });
+            const { data: logs } = await query.gte('tanggal', startDate).lte('tanggal', endDate);
+            
+            let html = `<table><thead>`;
+            if(mode === 'matriks') {
+                const totalDays = new Date(thn, bln + 1, 0).getDate();
+                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan</th><th colspan="${totalDays}">Tanggal</th><th rowspan="2">Total</th></tr><tr>`;
+                for(let d=1; d<=totalDays; d++) html += `<th class="w-6">${d}</th>`;
+                html += `</tr></thead><tbody>`;
+                masterKamus.forEach((k, i) => {
+                    let totalRow = 0;
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
+                    for(let d=1; d<=totalDays; d++) {
+                        const tglStr = `${thn}-${String(bln+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && l.tanggal === tglStr).reduce((a,b) => a + b.qty, 0);
+                        html += `<td>${sum || ''}</td>`;
+                        totalRow += sum;
+                    }
+                    html += `<td class="font-bold">${totalRow}</td></tr>`;
+                });
+            } else if(mode === 'triwulan') {
+                const startM = (tw-1)*3;
+                html += `<tr><th>No</th><th>Butir Kegiatan</th><th>${listBulan[startM]}</th><th>${listBulan[startM+1]}</th><th>${listBulan[startM+2]}</th><th>Total</th></tr></thead><tbody>`;
+                masterKamus.forEach((k, i) => {
+                    let totalRow = 0;
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
+                    for(let m=startM; m<startM+3; m++) {
+                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && new Date(l.tanggal).getMonth() === m).reduce((a,b) => a + b.qty, 0);
+                        html += `<td>${sum || 0}</td>`;
+                        totalRow += sum;
+                    }
+                    html += `<td class="font-bold">${totalRow}</td></tr>`;
+                });
+            } else if(mode === 'tahunan') {
+                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan</th><th colspan="12">Bulan</th><th rowspan="2">Total</th></tr><tr>`;
+                listBulan.forEach(m => html += `<th class="text-[7pt]">${m.substring(0,3)}</th>`);
+                html += `</tr></thead><tbody>`;
+                masterKamus.forEach((k, i) => {
+                    let totalRow = 0;
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
+                    for(let m=0; m<12; m++) {
+                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && new Date(l.tanggal).getMonth() === m).reduce((a,b) => a + b.qty, 0);
+                        html += `<td>${sum || 0}</td>`;
+                        totalRow += sum;
+                    }
+                    html += `<td class="font-bold">${totalRow}</td></tr>`;
+                });
+            } else if(mode === 'harian_print') {
+                html += `<tr><th>No</th><th>Tanggal</th><th>Butir Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th></tr></thead><tbody>`;
+                (logs || []).sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal)).forEach((l, i) => {
+                    html += `<tr><td>${i+1}</td><td>${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan}</td><td>${l.no_rm}</td><td>${l.jam_mulai}-${l.jam_selesai}</td><td>${l.qty}</td></tr>`;
+                });
+            }
+
             html += `</tbody></table>`;
             document.getElementById('rekap-table-container').innerHTML = html;
         }
 
-        function exportToExcel(id, name) {
-            const table = document.getElementById(id);
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `${name}.xlsx`);
+        function exportToExcel(id, filename) {
+            let table = document.getElementById(id);
+            let wb = XLSX.utils.table_to_book(table, {sheet: "Laporan"});
+            XLSX.writeFile(wb, filename + ".xlsx");
         }
     </script>
 </body>
