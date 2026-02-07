@@ -16,14 +16,12 @@
         table { border-collapse: collapse; width: 100%; font-size: 8pt; background: white; }
         th, td { border: 1px solid #000 !important; padding: 4px; text-align: center; }
         .text-left-imp { text-align: left !important; padding-left: 5px !important; }
-        .bg-gray-sub { background-color: #f3f4f6; font-size: 7pt; }
 
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
-            .print-area { display: block !important; }
+            .print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
             @page { size: landscape; margin: 1cm; }
-            #rekap-table-container table { font-size: 8pt; width: 100%; }
         }
     </style>
 </head>
@@ -75,7 +73,6 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
-            
             <div id="sec-login" class="form-section active no-print">
                 <div class="max-w-md mx-auto mt-20 bg-white p-10 rounded-3xl shadow-2xl border">
                     <h2 class="text-2xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter">Login E-Logbook</h2>
@@ -115,7 +112,6 @@
             <div id="sec-dashboard" class="form-section no-print">
                 <div class="bg-white p-6 border rounded-2xl shadow-sm mb-6">
                     <h3 class="font-black mb-4 uppercase text-blue-600">✍️ Input Logbook Harian</h3>
-                    <input type="hidden" id="log-id">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="col-span-2">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Butir Kegiatan</label>
@@ -138,13 +134,10 @@
                 <div class="bg-white rounded-2xl border overflow-hidden shadow-sm">
                     <div class="p-4 flex justify-between items-center border-b">
                         <h4 class="font-bold text-sm uppercase">Riwayat Input Harian</h4>
-                        <div class="flex gap-2">
-                            <button onclick="exportToExcel('list-log-harian', 'Logbook_Harian')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Excel</button>
-                            <button onclick="renderRekap('harian_print')" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Cetak Harian</button>
-                        </div>
+                        <button onclick="exportToExcel('list-log-harian', 'Logbook_Harian')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Excel</button>
                     </div>
                     <table class="w-full text-xs" id="list-log-harian">
-                        <thead class="bg-slate-50"><tr><th>No</th><th>Kegiatan</th><th>RM</th><th>Waktu</th><th>Qty</th><th>Aksi</th></tr></thead>
+                        <thead class="bg-slate-50"><tr><th>No</th><th>Kegiatan (Target|Real)</th><th>RM</th><th>Waktu</th><th>Qty</th><th>Aksi</th></tr></thead>
                         <tbody id="list-history"></tbody>
                     </table>
                 </div>
@@ -156,12 +149,12 @@
                     <div class="grid grid-cols-1 gap-4">
                         <input type="text" id="p-nama" placeholder="Nama Lengkap & Gelar" class="border p-3 rounded-xl">
                         <input type="text" id="p-nip" placeholder="NIP" class="border p-3 rounded-xl">
-                        <input type="text" id="p-gol" placeholder="Golongan / Ruang" class="border p-3 rounded-xl">
+                        <input type="text" id="p-gol" placeholder="Golongan" class="border p-3 rounded-xl">
                         <input type="text" id="p-jabatan" placeholder="Jabatan" class="border p-3 rounded-xl">
                         <input type="text" id="p-org" placeholder="Instansi" class="border p-3 rounded-xl">
                         <input type="text" id="p-unit" placeholder="Unit Kerja" class="border p-3 rounded-xl">
                         <input type="text" id="p-kota" placeholder="Kabupaten/Kota" class="border p-3 rounded-xl">
-                        <hr><label class="font-bold text-xs text-blue-600 uppercase">Pejabat Penandatangan</label>
+                        <hr><label class="font-bold text-xs text-blue-600 uppercase">Atasan</label>
                         <input type="text" id="p-atasan-nama" placeholder="Nama Atasan" class="border p-3 rounded-xl">
                         <input type="text" id="p-atasan-nip" placeholder="NIP Atasan" class="border p-3 rounded-xl">
                         <input type="text" id="p-atasan-jabatan" placeholder="Jabatan Atasan" class="border p-3 rounded-xl">
@@ -173,16 +166,16 @@
             <div id="sec-rekap" class="form-section print-area bg-white p-4">
                 <div id="rekap-nav-controls" class="no-print flex flex-wrap gap-4 justify-between mb-8 bg-slate-100 p-4 rounded-xl border border-slate-200">
                     <div class="flex flex-wrap gap-2 items-center">
-                        <h4 class="font-black uppercase mr-2 text-[10px] text-slate-500">Opsi Laporan:</h4>
+                        <h4 class="font-black uppercase mr-2 text-[10px] text-slate-500">Opsi:</h4>
                         <select id="view-mode-atasan" class="p-1 text-xs border rounded bg-white font-bold text-blue-600 uppercase" onchange="switchViewAtasan(this.value)">
                             <option value="rekap">📄 Rekapitulasi</option>
                             <option value="harian">📝 Detail Harian</option>
                         </select>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="exportToExcel('rekap-table-container', 'Laporan_Logbook')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">Excel</button>
-                        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase shadow-lg">Cetak / PDF</button>
-                        <button id="btn-tutup-rekap" onclick="showSection('sec-dashboard')" class="bg-white border px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50">Tutup</button>
+                        <button onclick="exportToExcel('rekap-table-container', 'Laporan')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">Excel</button>
+                        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase shadow-lg">Cetak/PDF</button>
+                        <button onclick="showSection('sec-dashboard')" class="bg-white border px-4 py-2 rounded-lg font-bold text-xs uppercase">Tutup</button>
                     </div>
                 </div>
 
@@ -240,15 +233,12 @@
 
             if (viewId) {
                 document.getElementById('sec-login').classList.remove('active');
-                document.getElementById('sidebar').classList.add('hidden');
-                document.getElementById('topbar').classList.add('hidden');
                 const { data: p } = await _supabase.from('profiles').select('*').eq('id', viewId).single();
                 if(p) {
                     profileData = p;
                     currentUser = { id: viewId };
                     const { data: km } = await _supabase.from('kamus_kegiatan').select('*').eq('user_id', viewId);
                     masterKamus = km || [];
-                    showSection('sec-rekap');
                     renderRekap('matriks');
                 }
                 return;
@@ -286,7 +276,7 @@
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
             const { error } = await _supabase.auth.signUp({ email, password: pass });
-            if (error) alert(error.message); else alert("Berhasil! Silakan cek email.");
+            if (error) alert(error.message); else alert("Cek email Anda untuk verifikasi.");
         }
 
         async function logout() { await _supabase.auth.signOut(); location.reload(); }
@@ -298,12 +288,7 @@
 
         function copyShareLink() {
             const link = window.location.origin + window.location.pathname + "?view=" + currentUser.id;
-            navigator.clipboard.writeText(link).then(() => alert("Link Laporan Berhasil Disalin!"));
-        }
-
-        async function switchViewAtasan(val) {
-            if(val === 'harian') renderRekap('harian_print');
-            else renderRekap('matriks');
+            navigator.clipboard.writeText(link).then(() => alert("Link berhasil disalin!"));
         }
 
         async function loadKamus() {
@@ -311,8 +296,8 @@
             masterKamus = data || [];
             document.getElementById('list-kamus').innerHTML = masterKamus.map((k, i) => `
                 <tr class="border-b"><td>${i+1}</td><td class="text-left-imp font-bold">${k.nama_kegiatan}</td><td>${k.target_tahunan}</td><td>${k.hasil_kerja}</td>
-                <td><a href="${k.link_bukti_dukung}" target="_blank" class="text-blue-500">Link</a></td>
-                <td class="flex gap-2 p-1"><button onclick="editKamus('${k.id}')" class="text-blue-600">Edit</button><button onclick="delKamus('${k.id}')" class="text-red-600">Hapus</button></td></tr>
+                <td><a href="${k.link_bukti_dukung}" target="_blank" class="text-blue-500 underline">Link</a></td>
+                <td class="p-1"><button onclick="editKamus('${k.id}')" class="text-blue-600 mr-2">Edit</button><button onclick="delKamus('${k.id}')" class="text-red-600">Hapus</button></td></tr>
             `).join('');
             document.getElementById('log-kegiatan').innerHTML = masterKamus.map(k => `<option value="${k.id}">${k.nama_kegiatan}</option>`).join('');
         }
@@ -341,14 +326,17 @@
             document.getElementById('k-link').value = k.link_bukti_dukung;
         }
 
-        async function delKamus(id) { if(confirm("Hapus master ini?")) { await _supabase.from('kamus_kegiatan').delete().eq('id', id); loadKamus(); } }
+        async function delKamus(id) { if(confirm("Hapus?")) { await _supabase.from('kamus_kegiatan').delete().eq('id', id); loadKamus(); } }
 
         async function loadHistory() {
-            const { data } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(nama_kegiatan)').eq('user_id', currentUser.id).order('tanggal', {ascending:false});
-            document.getElementById('list-history').innerHTML = (data || []).map((l, i) => `
-                <tr><td>${i+1}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan || 'Tanpa Nama'}</td><td>${l.no_rm}</td><td>${l.jam_mulai} - ${l.jam_selesai}</td><td>${l.qty}</td>
-                <td><button onclick="delLog('${l.id}')" class="text-red-600">Hapus</button></td></tr>
-            `).join('');
+            const { data: logs } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).order('tanggal', {ascending:false});
+            const { data: allLogs } = await _supabase.from('logbook_harian').select('*').eq('user_id', currentUser.id);
+
+            document.getElementById('list-history').innerHTML = (logs || []).map((l, i) => {
+                const target = l.kamus_kegiatan?.target_tahunan || 0;
+                const realisasi = (allLogs || []).filter(x => x.kegiatan_id === l.kegiatan_id).reduce((a,b) => a + b.qty, 0);
+                return `<tr><td>${i+1}</td><td class="text-left-imp"><b>${l.kamus_kegiatan?.nama_kegiatan || '-'}</b><br><small>T:${target}|R:${realisasi}</small></td><td>${l.no_rm}</td><td>${l.jam_mulai}-${l.jam_selesai}</td><td>${l.qty}</td><td><button onclick="delLog('${l.id}')" class="text-red-600">Hapus</button></td></tr>`;
+            }).join('');
         }
 
         async function saveLog() {
@@ -395,8 +383,13 @@
                 atasan_jabatan: document.getElementById('p-atasan-jabatan').value
             };
             await _supabase.from('profiles').upsert(payload);
-            alert("Profil berhasil diperbarui!");
+            alert("Profil disimpan!");
             checkUser();
+        }
+
+        function switchViewAtasan(val) {
+            if(val === 'harian') renderRekap('harian_print');
+            else renderRekap('matriks');
         }
 
         async function renderRekap(mode) {
@@ -423,82 +416,107 @@
             const tglCetak = new Date(document.getElementById('tgl-cetak-manual').value);
             document.getElementById('r-tgl-cetak').innerText = `${profileData.kota || 'Kota'}, ${tglCetak.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`;
 
-            let query = _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id);
             let startDate, endDate;
-
-            if(mode === 'matriks') {
-                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK BULANAN";
-                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
+            if(mode === 'matriks' || mode === 'harian_print') {
                 startDate = `${thn}-${String(bln+1).padStart(2,'0')}-01`;
                 endDate = `${thn}-${String(bln+1).padStart(2,'0')}-31`;
+                document.getElementById('r-title').innerText = mode === 'matriks' ? "LAPORAN LOGBOOK BULANAN" : "DETAIL HARIAN LOGBOOK";
+                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
             } else if(mode === 'triwulan') {
-                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
                 const startM = (tw-1)*3;
-                document.getElementById('r-periode').innerText = `Triwulan ${tw} (${listBulan[startM]} - ${listBulan[startM+2]}) ${thn}`;
                 startDate = `${thn}-${String(startM+1).padStart(2,'0')}-01`;
                 endDate = `${thn}-${String(startM+3).padStart(2,'0')}-31`;
+                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
+                document.getElementById('r-periode').innerText = `Triwulan ${tw} (${listBulan[startM]} - ${listBulan[startM+2]}) ${thn}`;
             } else if(mode === 'tahunan') {
-                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
-                document.getElementById('r-periode').innerText = `Periode Tahun: ${thn}`;
                 startDate = `${thn}-01-01`;
                 endDate = `${thn}-12-31`;
-            } else if(mode === 'harian_print') {
-                document.getElementById('r-title').innerText = "DETAIL HARIAN LOGBOOK";
-                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
-                startDate = `${thn}-${String(bln+1).padStart(2,'0')}-01`;
-                endDate = `${thn}-${String(bln+1).padStart(2,'0')}-31`;
+                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
+                document.getElementById('r-periode').innerText = `Periode Tahun: ${thn}`;
             }
 
-            const { data: logs } = await query.gte('tanggal', startDate).lte('tanggal', endDate);
+            const { data: logs } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).gte('tanggal', startDate).lte('tanggal', endDate);
+            const { data: allLogs } = await _supabase.from('logbook_harian').select('*').eq('user_id', currentUser.id);
             
             let html = `<table><thead>`;
+            
             if(mode === 'matriks') {
                 const totalDays = new Date(thn, bln + 1, 0).getDate();
-                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan</th><th colspan="${totalDays}">Tanggal</th><th rowspan="2">Total</th></tr><tr>`;
+                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="${totalDays}">Tanggal</th><th rowspan="2">Total Bln Ini</th></tr><tr>`;
                 for(let d=1; d<=totalDays; d++) html += `<th class="w-6">${d}</th>`;
                 html += `</tr></thead><tbody>`;
+                
                 masterKamus.forEach((k, i) => {
-                    let totalRow = 0;
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
+                    let totalBulanIni = 0;
+                    const target = k.target_tahunan || 0;
+                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
+                    const sisa = target - realisasiKumulatif;
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
                     for(let d=1; d<=totalDays; d++) {
-                        const tglStr = `${thn}-${String(bln+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && l.tanggal === tglStr).reduce((a,b) => a + b.qty, 0);
-                        html += `<td>${sum || ''}</td>`;
-                        totalRow += sum;
+                        const dayStr = `${thn}-${String(bln+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const dayQty = (logs || []).filter(l => l.kegiatan_id === k.id && l.tanggal === dayStr).reduce((a,b) => a + b.qty, 0);
+                        totalBulanIni += dayQty;
+                        html += `<td>${dayQty || ''}</td>`;
                     }
-                    html += `<td class="font-bold">${totalRow}</td></tr>`;
+                    html += `<td class="font-bold">${totalBulanIni}</td></tr>`;
                 });
+
             } else if(mode === 'triwulan') {
-                const startM = (tw-1)*3;
-                html += `<tr><th>No</th><th>Butir Kegiatan</th><th>${listBulan[startM]}</th><th>${listBulan[startM+1]}</th><th>${listBulan[startM+2]}</th><th>Total</th></tr></thead><tbody>`;
-                masterKamus.forEach((k, i) => {
-                    let totalRow = 0;
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
-                    for(let m=startM; m<startM+3; m++) {
-                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && new Date(l.tanggal).getMonth() === m).reduce((a,b) => a + b.qty, 0);
-                        html += `<td>${sum || 0}</td>`;
-                        totalRow += sum;
-                    }
-                    html += `<td class="font-bold">${totalRow}</td></tr>`;
-                });
-            } else if(mode === 'tahunan') {
-                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan</th><th colspan="12">Bulan</th><th rowspan="2">Total</th></tr><tr>`;
-                listBulan.forEach(m => html += `<th class="text-[7pt]">${m.substring(0,3)}</th>`);
+                const startMonthIdx = (tw - 1) * 3;
+                const monthsInTw = [listBulan[startMonthIdx], listBulan[startMonthIdx+1], listBulan[startMonthIdx+2]];
+
+                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="3">Bulan</th><th rowspan="2">Total Triwulan</th><th rowspan="2">Output</th></tr><tr>`;
+                monthsInTw.forEach(mName => html += `<th>${mName}</th>`);
                 html += `</tr></thead><tbody>`;
+
                 masterKamus.forEach((k, i) => {
-                    let totalRow = 0;
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td>`;
-                    for(let m=0; m<12; m++) {
-                        const sum = (logs || []).filter(l => l.kegiatan_id === k.id && new Date(l.tanggal).getMonth() === m).reduce((a,b) => a + b.qty, 0);
-                        html += `<td>${sum || 0}</td>`;
-                        totalRow += sum;
+                    let totalTw = 0;
+                    const target = k.target_tahunan || 0;
+                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
+                    const sisa = target - realisasiKumulatif;
+
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
+                    
+                    for(let j=0; j<3; j++) {
+                        const currentMonthIdx = startMonthIdx + j;
+                        const blnQty = (logs || []).filter(l => {
+                            const d = new Date(l.tanggal);
+                            return l.kegiatan_id === k.id && d.getMonth() === currentMonthIdx;
+                        }).reduce((a,b) => a + b.qty, 0);
+                        totalTw += blnQty;
+                        html += `<td>${blnQty || ''}</td>`;
                     }
-                    html += `<td class="font-bold">${totalRow}</td></tr>`;
+                    html += `<td class="font-bold">${totalTw}</td><td>${k.hasil_kerja}</td></tr>`;
                 });
+
+            } else if(mode === 'tahunan') {
+                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="12">Bulan</th><th rowspan="2">Total Tahun</th></tr><tr>`;
+                listBulan.forEach(b => html += `<th class="text-[7pt]">${b.substring(0,3)}</th>`);
+                html += `</tr></thead><tbody>`;
+
+                masterKamus.forEach((k, i) => {
+                    let totalTahunIni = 0;
+                    const target = k.target_tahunan || 0;
+                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
+                    const sisa = target - realisasiKumulatif;
+
+                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
+                    
+                    for(let m=0; m<12; m++) {
+                        const blnQty = (logs || []).filter(l => {
+                            const d = new Date(l.tanggal);
+                            return l.kegiatan_id === k.id && d.getMonth() === m;
+                        }).reduce((a,b) => a + b.qty, 0);
+                        totalTahunIni += blnQty;
+                        html += `<td>${blnQty || ''}</td>`;
+                    }
+                    html += `<td class="font-bold">${totalTahunIni}</td></tr>`;
+                });
+
             } else if(mode === 'harian_print') {
-                html += `<tr><th>No</th><th>Tanggal</th><th>Butir Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th></tr></thead><tbody>`;
-                (logs || []).sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal)).forEach((l, i) => {
-                    html += `<tr><td>${i+1}</td><td>${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan}</td><td>${l.no_rm}</td><td>${l.jam_mulai}-${l.jam_selesai}</td><td>${l.qty}</td></tr>`;
+                html = `<table><thead><tr><th>No</th><th>Tanggal</th><th>Butir Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th></tr></thead><tbody>`;
+                (logs || []).forEach((l, i) => {
+                    html += `<tr><td>${i+1}</td><td>${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan}</td><td>${l.no_rm}</td><td>${l.jam_mulai} - ${l.jam_selesai}</td><td>${l.qty}</td></tr>`;
                 });
             }
 
@@ -506,10 +524,10 @@
             document.getElementById('rekap-table-container').innerHTML = html;
         }
 
-        function exportToExcel(id, filename) {
-            let table = document.getElementById(id);
-            let wb = XLSX.utils.table_to_book(table, {sheet: "Laporan"});
-            XLSX.writeFile(wb, filename + ".xlsx");
+        function exportToExcel(containerId, fileName) {
+            const table = document.getElementById(containerId).querySelector('table');
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Laporan"});
+            XLSX.writeFile(wb, `${fileName}_${new Date().getTime()}.xlsx`);
         }
     </script>
 </body>
