@@ -23,7 +23,6 @@
             body { background: white; padding: 0; }
             .print-area { display: block !important; }
             @page { size: landscape; margin: 1cm; }
-            /* Memastikan tabel harian tampil rapi saat dicetak */
             #rekap-table-container table { font-size: 9pt; width: 100%; }
         }
     </style>
@@ -155,6 +154,7 @@
                     <div class="grid grid-cols-1 gap-4">
                         <input type="text" id="p-nama" placeholder="Nama Lengkap & Gelar" class="border p-3 rounded-xl">
                         <input type="text" id="p-nip" placeholder="NIP" class="border p-3 rounded-xl">
+                        <input type="text" id="p-gol" placeholder="Golongan / Ruang" class="border p-3 rounded-xl">
                         <input type="text" id="p-jabatan" placeholder="Jabatan" class="border p-3 rounded-xl">
                         <input type="text" id="p-org" placeholder="Instansi" class="border p-3 rounded-xl">
                         <input type="text" id="p-unit" placeholder="Unit Kerja" class="border p-3 rounded-xl">
@@ -204,7 +204,12 @@
                 </div>
 
                 <div class="grid grid-cols-2 text-[8pt] mb-4 font-semibold">
-                    <div><p>Nama : <span id="r-nama"></span></p><p>NIP : <span id="r-nip"></span></p><p>Jabatan : <span id="r-jabatan"></span></p></div>
+                    <div>
+                        <p>Nama : <span id="r-nama"></span></p>
+                        <p>NIP : <span id="r-nip"></span></p>
+                        <p>Gol/Ruang : <span id="r-gol"></span></p>
+                        <p>Jabatan : <span id="r-jabatan"></span></p>
+                    </div>
                     <div class="text-right"><p>Unit Kerja : <span id="r-unit"></span></p><p>Kab/Kota : <span id="r-kota"></span></p></div>
                 </div>
 
@@ -325,13 +330,9 @@
             }
         }
 
-        // --- ATASAN / SHARE VIEW SWITCHER ---
         async function switchViewAtasan(val) {
-            if(val === 'harian') {
-                renderRekap('harian_print');
-            } else {
-                renderRekap('matriks');
-            }
+            if(val === 'harian') renderRekap('harian_print');
+            else renderRekap('matriks');
         }
 
         // --- DATA HANDLERS ---
@@ -399,6 +400,7 @@
         function fillFormProfil(p) {
             document.getElementById('p-nama').value = p.nama_lengkap || '';
             document.getElementById('p-nip').value = p.nip || '';
+            document.getElementById('p-gol').value = p.golongan || '';
             document.getElementById('p-jabatan').value = p.jabatan || '';
             document.getElementById('p-org').value = p.instansi || '';
             document.getElementById('p-unit').value = p.unit_kerja || '';
@@ -413,6 +415,7 @@
                 id: currentUser.id,
                 nama_lengkap: document.getElementById('p-nama').value,
                 nip: document.getElementById('p-nip').value,
+                golongan: document.getElementById('p-gol').value,
                 jabatan: document.getElementById('p-jabatan').value,
                 instansi: document.getElementById('p-org').value,
                 unit_kerja: document.getElementById('p-unit').value,
@@ -432,10 +435,10 @@
             const bln = parseInt(document.getElementById('sel-bulan').value);
             const thn = parseInt(document.getElementById('sel-tahun').value);
             
-            // Info Header Cetak
             document.getElementById('r-org').innerText = profileData.instansi || '-';
             document.getElementById('r-nama').innerText = profileData.nama_lengkap || '-';
             document.getElementById('r-nip').innerText = profileData.nip || '-';
+            document.getElementById('r-gol').innerText = profileData.golongan || '-';
             document.getElementById('r-jabatan').innerText = profileData.jabatan || '-';
             document.getElementById('r-unit').innerText = profileData.unit_kerja || '-';
             document.getElementById('r-kota').innerText = profileData.kota || '-';
@@ -465,28 +468,27 @@
                 return;
             }
 
-            // Mode Rekap Bulanan/Triwulan/Tahunan
             if(mode==='matriks') {
                 document.getElementById('r-title').innerText = "LAPORAN LOGBOOK BULANAN";
                 document.getElementById('r-periode').innerText = `Periode: ${document.getElementById('sel-bulan').options[bln].text} ${thn}`;
                 query = query.gte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(bln+1).padStart(2,'0')}-31`);
             } else if(mode==='triwulan') {
                 const tri = parseInt(document.getElementById('sel-triwulan').value);
-                const start = (tri-1)*3 + 1; const end = start + 2;
-                document.getElementById('r-title').innerText = `LAPORAN LOGBOOK TRIWULAN ${tri}`;
-                document.getElementById('r-periode').innerText = `Tahun: ${thn}`;
-                query = query.gte('tanggal', `${thn}-${String(start).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(end).padStart(2,'0')}-31`);
+                const mStart = (tri-1)*3 + 1; const mEnd = tri*3;
+                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
+                document.getElementById('r-periode').innerText = `Triwulan ${tri} - Tahun ${thn}`;
+                query = query.gte('tanggal', `${thn}-${String(mStart).padStart(2,'0')}-01`).lte('tanggal', `${thn}-${String(mEnd).padStart(2,'0')}-31`);
             } else if(mode==='tahunan') {
                 document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
-                document.getElementById('r-periode').innerText = `Tahun: ${thn}`;
+                document.getElementById('r-periode').innerText = `Tahun ${thn}`;
                 query = query.gte('tanggal', `${thn}-01-01`).lte('tanggal', `${thn}-12-31`);
             }
 
             const { data: logs } = await query;
-            let html = `<table><thead><tr><th>No</th><th>Butir Kegiatan</th><th>Target</th><th>Hasil</th><th>Total Capaian</th><th>Ket</th></tr></thead><tbody>`;
+            let html = `<table><thead><tr><th>No</th><th>Butir Kegiatan</th><th>Target Thn</th><th>Hasil Kerja</th><th>Capaian</th><th>Bukti</th></tr></thead><tbody>`;
             masterKamus.forEach((k, i) => {
                 const total = (logs || []).filter(l => l.kegiatan_id === k.id).reduce((sum, item) => sum + item.qty, 0);
-                html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td><td>${k.target_tahunan}</td><td>${k.hasil_kerja}</td><td>${total}</td><td>Selesai</td></tr>`;
+                html += `<tr><td>${i+1}</td><td class="text-left-imp">${k.nama_kegiatan}</td><td>${k.target_tahunan}</td><td>${k.hasil_kerja}</td><td class="font-bold">${total}</td><td><a href="${k.link_bukti_dukung}" target="_blank" class="text-blue-600">Link</a></td></tr>`;
             });
             html += `</tbody></table>`;
             document.getElementById('rekap-table-container').innerHTML = html;
@@ -495,7 +497,7 @@
         function exportToExcel(id, name) {
             const table = document.getElementById(id);
             const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `${name}_${new Date().getTime()}.xlsx`);
+            XLSX.writeFile(wb, `${name}.xlsx`);
         }
     </script>
 </body>
