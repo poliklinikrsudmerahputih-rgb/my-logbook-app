@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Logbook Pro - Versi Premium</title>
+    <title>E-Logbook Pro - Dev Daniel Arik</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -17,6 +17,14 @@
         th, td { border: 1px solid #000 !important; padding: 4px; text-align: center; }
         .text-left-imp { text-align: left !important; padding-left: 5px !important; }
 
+        /* Fix untuk tampilan Mobile */
+        @media (max-width: 768px) {
+            .flex-h-screen-mobile { height: auto !important; overflow-y: auto !important; }
+            body { overflow-y: auto; }
+            aside { position: fixed; z-index: 50; height: 100%; }
+            main { min-height: 100vh; }
+        }
+
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
@@ -25,7 +33,7 @@
         }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex h-screen overflow-hidden flex-h-screen-mobile">
 
     <aside id="sidebar" class="no-print bg-slate-900 text-white w-64 hidden flex-col shadow-2xl overflow-y-auto">
         <div class="p-6 border-b border-slate-800 text-center">
@@ -63,51 +71,36 @@
                 <button onclick="renderRekap('tahunan')" class="w-full bg-amber-600 p-2 rounded font-black text-[10px] uppercase">Tahunan</button>
             </div>
         </nav>
-        <div class="p-4 border-t border-slate-800"><button onclick="logout()" class="w-full bg-red-500/20 text-red-500 p-2 rounded-lg font-bold text-xs uppercase">Keluar</button></div>
+        <div class="p-4 border-t border-slate-800 mt-auto"><button onclick="logout()" class="w-full bg-red-500/20 text-red-500 p-2 rounded-lg font-bold text-xs uppercase">Keluar</button></div>
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden bg-white">
         <header id="topbar" class="no-print bg-white shadow-sm p-4 hidden justify-between items-center border-b">
-            <h2 id="page-title" class="font-black text-slate-700 uppercase text-sm">Dashboard</h2>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-800">☰</button>
+                <h2 id="page-title" class="font-black text-slate-700 uppercase text-sm">Dashboard</h2>
+            </div>
             <div id="user-display" class="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-[10px] font-bold uppercase border">...</div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
             <div id="sec-login" class="form-section active no-print">
-                <div class="max-w-md mx-auto mt-20 bg-white p-10 rounded-3xl shadow-2xl border">
-                    <h2 class="text-2xl font-black mb-6 text-center text-slate-800 uppercase tracking-tighter">Login E-Logbook</h2>
+                <div class="max-w-md mx-auto mt-20 bg-white p-10 rounded-3xl shadow-2xl border text-center">
+                    <h2 class="text-2xl font-black mb-6 text-slate-800 uppercase tracking-tighter">Login E-Logbook</h2>
                     <div class="space-y-4">
-                        <input type="email" id="email" placeholder="Email" class="w-full border p-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        <input type="password" id="password" placeholder="Password" class="w-full border p-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        <button onclick="login()" class="w-full bg-slate-900 text-white p-4 rounded-xl font-black uppercase hover:bg-slate-800 transition shadow-lg">Masuk</button>
-                        <div class="relative py-2">
-                            <div class="absolute inset-0 flex items-center"><span class="w-full border-t"></span></div>
-                            <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Atau</span></div>
+                        <input type="email" id="email" placeholder="Email" class="w-full border p-4 rounded-xl outline-none">
+                        <input type="password" id="password" placeholder="Password" class="w-full border p-4 rounded-xl outline-none">
+                        
+                        <button onclick="login()" class="w-full bg-slate-900 text-white p-4 rounded-xl font-black uppercase shadow-lg">Masuk</button>
+                        <button onclick="signUp()" class="w-full bg-white border-2 border-blue-600 text-blue-600 p-4 rounded-xl font-black uppercase">Daftar Akun Baru</button>
+    
+                        <div class="mt-4">
+                            <button onclick="handleLupaPassword()" class="text-slate-500 text-sm font-medium hover:text-slate-800 transition-colors underline">
+                                Lupa Password? Hubungi Admin
+                            </button>
                         </div>
-                        <button onclick="signUp()" class="w-full bg-white border-2 border-blue-600 text-blue-600 p-4 rounded-xl font-black uppercase hover:bg-blue-50 transition">Daftar Akun Baru</button>
                     </div>
                 </div>
-            </div>
-
-            <div id="sec-kamus" class="form-section no-print">
-                <div class="bg-white p-6 border rounded-2xl shadow-sm mb-6">
-                    <h3 class="font-black mb-4 uppercase text-blue-600">📂 Master Butir Kegiatan</h3>
-                    <input type="hidden" id="k-id">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" id="k-nama" placeholder="Nama Butir Kegiatan" class="border p-3 rounded-xl col-span-2">
-                        <input type="number" id="k-target" placeholder="Target Tahunan" class="border p-3 rounded-xl">
-                        <select id="k-hasil" class="border p-3 rounded-xl">
-                            <option value="Dokumen">Dokumen</option><option value="Laporan">Laporan</option>
-                            <option value="Kegiatan">Kegiatan</option><option value="Logbook">Logbook</option>
-                        </select>
-                        <input type="text" id="k-link" placeholder="Link Bukti Dukung" class="border p-3 rounded-xl col-span-2">
-                        <button onclick="saveKamus()" class="bg-slate-900 text-white p-3 rounded-xl font-bold uppercase">Simpan</button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-2xl border overflow-hidden">
-                    <table class="w-full text-xs"><thead class="bg-slate-100"><tr><th>No</th><th>Kegiatan</th><th>Target</th><th>Output</th><th>Link</th><th>Aksi</th></tr></thead><tbody id="list-kamus"></tbody></table>
-                </div>
-            </div>
 
             <div id="sec-dashboard" class="form-section no-print">
                 <div class="bg-white p-6 border rounded-2xl shadow-sm mb-6">
@@ -131,16 +124,49 @@
                         <div class="flex items-end"><button onclick="saveLog()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-black uppercase">Simpan</button></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl border overflow-hidden shadow-sm">
-                    <div class="p-4 flex justify-between items-center border-b">
-                        <h4 class="font-bold text-sm uppercase">Riwayat Input Harian</h4>
+
+                <div class="bg-white p-4 border rounded-t-2xl flex flex-wrap gap-4 items-end shadow-sm border-b-0">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="text-[9px] font-bold uppercase text-slate-400">Cari No. RM / Kegiatan</label>
+                        <input type="text" id="search-harian" oninput="loadHistory()" placeholder="Ketik sesuatu..." class="w-full border p-2 rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-slate-400">Filter Tanggal</label>
+                        <input type="date" id="filter-tgl-harian" onchange="loadHistory()" class="w-full border p-2 rounded-lg text-xs">
+                    </div>
+                    <button onclick="resetFilter()" class="bg-slate-100 px-3 py-2 rounded-lg text-[9px] font-bold uppercase">Reset</button>
+                </div>
+
+                <div class="bg-white rounded-b-2xl border overflow-hidden shadow-sm">
+                    <div class="p-4 flex justify-between items-center border-b bg-slate-50">
+                        <h4 class="font-bold text-sm uppercase">Riwayat Input</h4>
                         <button onclick="exportToExcel('list-log-harian', 'Logbook_Harian')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Excel</button>
                     </div>
-                    <table class="w-full text-xs" id="list-log-harian">
-                        <thead class="bg-slate-50"><tr><th>No</th><th>Kegiatan (Target|Real)</th><th>RM</th><th>Waktu</th><th>Qty</th><th>Aksi</th></tr></thead>
-                        <tbody id="list-history"></tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs" id="list-log-harian">
+                            <thead class="bg-slate-100"><tr><th>No</th><th>Tanggal</th><th>Kegiatan (T | R | S)</th><th>RM</th><th>Waktu</th><th>Qty</th><th>Aksi</th></tr></thead>
+                            <tbody id="list-history"></tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
+
+            <div id="sec-kamus" class="form-section no-print">
+                <div class="bg-white p-6 border rounded-2xl shadow-sm mb-6">
+                    <h3 class="font-black mb-4 uppercase text-blue-600">📂 Master Butir Kegiatan</h3>
+                    <input type="hidden" id="k-id">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="k-nama" placeholder="Nama Butir Kegiatan" class="border p-3 rounded-xl col-span-2">
+                        <input type="number" id="k-target" placeholder="Target Tahunan" class="border p-3 rounded-xl">
+                        <select id="k-hasil" class="border p-3 rounded-xl">
+                            <option value="Dokumen">Dokumen</option><option value="Laporan">Laporan</option>
+                            <option value="Kegiatan">Kegiatan</option><option value="Logbook">Logbook</option>
+                        </select>
+                        <input type="text" id="k-link" placeholder="Link Bukti Dukung" class="border p-3 rounded-xl col-span-2">
+                        <button onclick="saveKamus()" class="bg-slate-900 text-white p-3 rounded-xl font-bold uppercase">Simpan</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl border overflow-hidden"><table class="w-full text-xs"><thead class="bg-slate-100"><tr><th>No</th><th>Kegiatan</th><th>Target</th><th>Output</th><th>Link</th><th>Aksi</th></tr></thead><tbody id="list-kamus"></tbody></table></div>
             </div>
 
             <div id="sec-profil" class="form-section no-print max-w-2xl mx-auto">
@@ -166,18 +192,24 @@
             <div id="sec-rekap" class="form-section print-area bg-white p-4">
                 <div id="rekap-nav-controls" class="no-print flex flex-wrap gap-4 justify-between mb-8 bg-slate-100 p-4 rounded-xl border border-slate-200">
                     <div class="flex flex-wrap gap-2 items-center">
-                        <h4 class="font-black uppercase mr-2 text-[10px] text-slate-500">Opsi:</h4>
-                        <select id="view-mode-atasan" class="p-1 text-xs border rounded bg-white font-bold text-blue-600 uppercase" onchange="switchViewAtasan(this.value)">
-                            <option value="rekap">📄 Rekapitulasi</option>
-                            <option value="harian">📝 Detail Harian</option>
+                        <h4 class="font-black uppercase mr-2 text-[10px] text-slate-500">Opsi Tampilan:</h4>
+                        <select id="view-mode-atasan" class="p-2 text-xs border rounded bg-white font-bold text-blue-600 uppercase" onchange="renderRekap(this.value)">
+                            <option value="matriks">📄 Rekap Bulanan</option>
+                            <option value="triwulan">📄 Rekap Triwulan</option>
+                            <option value="tahunan">📄 Rekap Tahunan</option>
+                            <option value="harian_print">📝 Detail Harian</option>
                         </select>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="exportToExcel('rekap-table-container', 'Laporan')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">Excel</button>
-                        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase shadow-lg">Cetak/PDF</button>
-                        <button onclick="showSection('sec-dashboard')" class="bg-white border px-4 py-2 rounded-lg font-bold text-xs uppercase">Tutup</button>
-                    </div>
-                </div>
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="cetakHarian('cetakHarian')">cetakHarian</button>
+                        <button onclick="renderRekap('matriks')">Matriks</button>
+                        <button onclick="renderRekap('triwulan')">Triwulan</button>
+                        <button onclick="renderRekap('tahunan')">Tahunan</button>
+                            <button onclick="cetakHarian()" style="background-color: #f59e0b; color: white; padding: 8px 15px; border-radius: 4px; border: none; cursor: pointer;">🖨️ Cetak Detail RM (Harian)</button>
+                            <button onclick="printRekap()" style="background-color: #4f46e5; color: white; padding: 8px 15px; border-radius: 4px;">🖨️ Cetak Ke PDF</button>
+                            <button onclick="exportToExcel()" style="background-color: #16a34a; color: white; padding: 8px 15px; border-radius: 4px;">📊 Download Excel</button>
+                        </div>
+                    </div>       
 
                 <div class="text-center mb-6">
                     <h1 id="r-org" class="text-xl font-black uppercase"></h1>
@@ -215,24 +247,91 @@
         let profileData = {};
         let masterKamus = [];
 
-        window.onload = () => {
-            const selTahun = document.getElementById('sel-tahun');
-            const cY = new Date().getFullYear();
-            for(let y=cY-2; y<=cY+2; y++) {
-                let o = document.createElement('option'); o.value = y; o.innerText = y;
-                if(y===cY) o.selected=true; selTahun.appendChild(o);
-            }
-            document.getElementById('log-tgl').valueAsDate = new Date();
-            document.getElementById('tgl-cetak-manual').valueAsDate = new Date();
-            checkUser();
-        };
+        window.onload = async () => {
+    // --- SETUP AWAL (Koding Lama Anda) ---
+    const selTahun = document.getElementById('sel-tahun');
+    const cY = new Date().getFullYear();
+    if (selTahun) {
+        for(let y=cY-2; y<=cY+2; y++) {
+            let o = document.createElement('option'); o.value = y; o.innerText = y;
+            if(y===cY) o.selected=true; selTahun.appendChild(o);
+        }
+    }
+    
+    if (document.getElementById('log-tgl')) document.getElementById('log-tgl').valueAsDate = new Date();
+    if (document.getElementById('tgl-cetak-manual')) document.getElementById('tgl-cetak-manual').valueAsDate = new Date();
+
+    // --- LOGIKA "MODE INTIP" ATASAN (Koding Baru) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUserId = urlParams.get('view');
+
+    if (viewUserId) {
+        console.log("Mode Lihat Atasan Aktif...");
+        
+        // Sembunyikan form login & menu input agar atasan tidak bisa edit
+        const uiToHide = ['sec-login', 'sec-input', 'nav-menu', 'admin-tools'];
+        uiToHide.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // Tampilkan loading sederhana
+        const container = document.getElementById('rekap-table-container');
+        if (container) container.innerHTML = "<p class='text-center'>Memuat laporan pegawai, mohon tunggu...</p>";
+
+        // Jalankan fungsi ambil data khusus atasan
+        await loadDataForAtasan(viewUserId);
+        
+        // Tampilkan section rekap
+        if (typeof showSection === "function") showSection('sec-rekap'); 
+    } else {
+        // Jika buka normal (bukan lewat link share), jalankan login biasa
+        if (typeof checkUser === "function") checkUser();
+    }
+};
+
+async function loadDataForAtasan(userId) {
+    try {
+        // 1. Ambil Profil Anda
+        const { data: pData, error: pErr } = await _supabase.from('profiles').select('*').eq('id', userId).single();
+        if (pData) window.profileData = pData;
+
+        // 2. Ambil Log Kegiatan Anda
+        const { data: lData, error: lErr } = await _supabase.from('logs').select('*, kamus_kegiatan(*)').eq('user_id', userId);
+        if (lData) {
+            window.logs = lData;
+            // Langsung tampilkan laporan (default: Matriks)
+            if (typeof renderRekap === "function") renderRekap('matriks');
+        }
+        
+        if (pErr || lErr) alert("Gagal memuat data. Pastikan ID benar dan internet aktif.");
+        
+    } catch (err) {
+        console.error("Error loading share link:", err);
+    }
+}
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('flex');
+        }
+
+        function resetFilter() {
+            document.getElementById('search-harian').value = '';
+            document.getElementById('filter-tgl-harian').value = '';
+            loadHistory();
+        }
 
         async function checkUser() {
             const urlParams = new URLSearchParams(window.location.search);
             const viewId = urlParams.get('view');
 
             if (viewId) {
+                // Mode View Atasan (Link Share)
                 document.getElementById('sec-login').classList.remove('active');
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('btn-tutup-rekap').classList.add('hidden');
+                
                 const { data: p } = await _supabase.from('profiles').select('*').eq('id', viewId).single();
                 if(p) {
                     profileData = p;
@@ -284,12 +383,29 @@
         function showSection(id) {
             document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            if(window.innerWidth < 768) document.getElementById('sidebar').classList.add('hidden');
         }
 
-        function copyShareLink() {
-            const link = window.location.origin + window.location.pathname + "?view=" + currentUser.id;
-            navigator.clipboard.writeText(link).then(() => alert("Link berhasil disalin!"));
+       function copyShareLink() {
+    // Mengecek apakah sudah online atau masih file lokal
+    const isLocal = window.location.protocol === 'file:';
+    if (isLocal) {
+        return alert("PERINGATAN: Anda masih membuka file secara lokal. Laporan harus di-onlinekan (misal: GitHub Pages) agar bisa dilihat atasan melalui link.");
+    }
+
+    // Membuat link share
+    const link = window.location.origin + window.location.pathname + "?view=" + currentUser.id;
+    
+    // Menyalin ke clipboard
+    navigator.clipboard.writeText(link).then(() => {
+        const pesan = `Halo, berikut link Logbook saya:\n${link}\n\nAtasan dapat melihat Rekap Matriks, Triwulan, dan Detail RM Harian.`;
+        
+        // Opsional: Langsung arahkan ke WA jika ingin lebih praktis
+        if(confirm("Link berhasil disalin!\n\nIngin langsung mengirim ke WhatsApp Atasan?")) {
+            window.open(`https://wa.me/?text=${encodeURIComponent(pesan)}`, '_blank');
         }
+    });
+}
 
         async function loadKamus() {
             const { data } = await _supabase.from('kamus_kegiatan').select('*').eq('user_id', currentUser.id).order('created_at');
@@ -329,13 +445,34 @@
         async function delKamus(id) { if(confirm("Hapus?")) { await _supabase.from('kamus_kegiatan').delete().eq('id', id); loadKamus(); } }
 
         async function loadHistory() {
-            const { data: logs } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).order('tanggal', {ascending:false});
+            const search = document.getElementById('search-harian').value.toLowerCase();
+            const filterTgl = document.getElementById('filter-tgl-harian').value;
+            
+            let query = _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).order('tanggal', {ascending:false}).order('jam_mulai', {ascending:false});
+            
+            if(filterTgl) query = query.eq('tanggal', filterTgl);
+            
+            const { data: logs } = await query;
             const { data: allLogs } = await _supabase.from('logbook_harian').select('*').eq('user_id', currentUser.id);
 
-            document.getElementById('list-history').innerHTML = (logs || []).map((l, i) => {
+            const filteredLogs = (logs || []).filter(l => 
+                (l.kamus_kegiatan?.nama_kegiatan || '').toLowerCase().includes(search) || 
+                (l.no_rm || '').toLowerCase().includes(search)
+            );
+
+            document.getElementById('list-history').innerHTML = filteredLogs.map((l, i) => {
                 const target = l.kamus_kegiatan?.target_tahunan || 0;
                 const realisasi = (allLogs || []).filter(x => x.kegiatan_id === l.kegiatan_id).reduce((a,b) => a + b.qty, 0);
-                return `<tr><td>${i+1}</td><td class="text-left-imp"><b>${l.kamus_kegiatan?.nama_kegiatan || '-'}</b><br><small>T:${target}|R:${realisasi}</small></td><td>${l.no_rm}</td><td>${l.jam_mulai}-${l.jam_selesai}</td><td>${l.qty}</td><td><button onclick="delLog('${l.id}')" class="text-red-600">Hapus</button></td></tr>`;
+                const sisa = target - realisasi;
+                return `<tr>
+                    <td>${i+1}</td>
+                    <td>${l.tanggal}</td>
+                    <td class="text-left-imp"><b>${l.kamus_kegiatan?.nama_kegiatan || '-'}</b><br><small class="text-blue-600">T:${target} | R:${realisasi} | S:${sisa}</small></td>
+                    <td>${l.no_rm}</td>
+                    <td>${l.jam_mulai}-${l.jam_selesai}</td>
+                    <td class="font-bold">${l.qty}</td>
+                    <td><button onclick="delLog('${l.id}')" class="text-red-600 font-bold">Hapus</button></td>
+                </tr>`;
             }).join('');
         }
 
@@ -351,9 +488,10 @@
             };
             await _supabase.from('logbook_harian').insert([payload]);
             loadHistory();
+            alert("Data tersimpan!");
         }
 
-        async function delLog(id) { await _supabase.from('logbook_harian').delete().eq('id', id); loadHistory(); }
+        async function delLog(id) { if(confirm("Hapus data ini?")) { await _supabase.from('logbook_harian').delete().eq('id', id); loadHistory(); } }
 
         function fillFormProfil(p) {
             document.getElementById('p-nama').value = p.nama_lengkap || '';
@@ -387,148 +525,388 @@
             checkUser();
         }
 
-        function switchViewAtasan(val) {
-            if(val === 'harian') renderRekap('harian_print');
-            else renderRekap('matriks');
-        }
+       async function renderRekap(mode) {
+    showSection('sec-rekap');
+    const bln = parseInt(document.getElementById('sel-bulan').value);
+    const thn = parseInt(document.getElementById('sel-tahun').value);
+    const tw = parseInt(document.getElementById('sel-triwulan').value);
+    const listBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
-        async function renderRekap(mode) {
-            showSection('sec-rekap');
-            const bln = parseInt(document.getElementById('sel-bulan').value);
-            const thn = parseInt(document.getElementById('sel-tahun').value);
-            const tw = parseInt(document.getElementById('sel-triwulan').value);
-            const listBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    // Update Header Profil (Tetap Sama)
+    document.getElementById('r-org').innerText = profileData.instansi || '-';
+    document.getElementById('r-nama').innerText = profileData.nama_lengkap || '-';
+    document.getElementById('r-nip').innerText = profileData.nip || '-';
+    document.getElementById('r-gol').innerText = profileData.golongan || '-';
+    document.getElementById('r-jabatan').innerText = profileData.jabatan || '-';
+    document.getElementById('r-unit').innerText = profileData.unit_kerja || '-';
+    document.getElementById('r-kota').innerText = profileData.kota || '-';
+    document.getElementById('r-atasan-nama').innerText = profileData.atasan_nama || '-';
+    document.getElementById('r-atasan-jab').innerText = profileData.atasan_jabatan || '-';
+    document.getElementById('r-atasan-nip').innerText = profileData.atasan_nip || '-';
+    document.getElementById('r-saya-nama').innerText = profileData.nama_lengkap || '-';
+    document.getElementById('r-saya-nip').innerText = profileData.nip || '-';
 
-            // Header Profil
-            document.getElementById('r-org').innerText = profileData.instansi || '-';
-            document.getElementById('r-nama').innerText = profileData.nama_lengkap || '-';
-            document.getElementById('r-nip').innerText = profileData.nip || '-';
-            document.getElementById('r-gol').innerText = profileData.golongan || '-';
-            document.getElementById('r-jabatan').innerText = profileData.jabatan || '-';
-            document.getElementById('r-unit').innerText = profileData.unit_kerja || '-';
-            document.getElementById('r-kota').innerText = profileData.kota || '-';
-            document.getElementById('r-atasan-nama').innerText = profileData.atasan_nama || '-';
-            document.getElementById('r-atasan-jab').innerText = profileData.atasan_jabatan || '-';
-            document.getElementById('r-atasan-nip').innerText = profileData.atasan_nip || '-';
-            document.getElementById('r-saya-nama').innerText = profileData.nama_lengkap || '-';
-            document.getElementById('r-saya-nip').innerText = profileData.nip || '-';
+    const tglCetakVal = document.getElementById('tgl-cetak-manual').value;
+    const tglCetak = tglCetakVal ? new Date(tglCetakVal) : new Date();
+    document.getElementById('r-tgl-cetak').innerText = `${profileData.kota || 'Kota'}, ${tglCetak.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`;
 
-            const tglCetak = new Date(document.getElementById('tgl-cetak-manual').value);
-            document.getElementById('r-tgl-cetak').innerText = `${profileData.kota || 'Kota'}, ${tglCetak.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`;
+    let startDate, endDate;
+    if(mode === 'matriks' || mode === 'harian_print') {
+        const bulanStr = String(bln + 1).padStart(2, '0');
+        startDate = `${thn}-${bulanStr}-01`;
+        const lastDay = new Date(thn, bln + 1, 0).getDate();
+        endDate = `${thn}-${bulanStr}-${lastDay}`;
+        document.getElementById('r-title').innerText = mode === 'matriks' ? "LAPORAN LOGBOOK BULANAN" : "DETAIL HARIAN LOGBOOK";
+        document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
+    } else if(mode === 'triwulan') {
+        const startM = (tw - 1) * 3;
+        startDate = `${thn}-${String(startM + 1).padStart(2, '0')}-01`;
+        const lastDayTW = new Date(thn, startM + 3, 0).getDate();
+        endDate = `${thn}-${String(startM + 3).padStart(2, '0')}-${lastDayTW}`;
+        document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
+        document.getElementById('r-periode').innerText = `Triwulan ${tw} (${listBulan[startM]} - ${listBulan[startM+2]}) ${thn}`;
+    } else if(mode === 'tahunan') {
+        startDate = `${thn}-01-01`;
+        endDate = `${thn}-12-31`;
+        document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
+        document.getElementById('r-periode').innerText = `Periode Tahun: ${thn}`;
+    }
 
-            let startDate, endDate;
-            if(mode === 'matriks' || mode === 'harian_print') {
-                startDate = `${thn}-${String(bln+1).padStart(2,'0')}-01`;
-                endDate = `${thn}-${String(bln+1).padStart(2,'0')}-31`;
-                document.getElementById('r-title').innerText = mode === 'matriks' ? "LAPORAN LOGBOOK BULANAN" : "DETAIL HARIAN LOGBOOK";
-                document.getElementById('r-periode').innerText = `Periode: ${listBulan[bln]} ${thn}`;
-            } else if(mode === 'triwulan') {
-                const startM = (tw-1)*3;
-                startDate = `${thn}-${String(startM+1).padStart(2,'0')}-01`;
-                endDate = `${thn}-${String(startM+3).padStart(2,'0')}-31`;
-                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TRIWULAN";
-                document.getElementById('r-periode').innerText = `Triwulan ${tw} (${listBulan[startM]} - ${listBulan[startM+2]}) ${thn}`;
-            } else if(mode === 'tahunan') {
-                startDate = `${thn}-01-01`;
-                endDate = `${thn}-12-31`;
-                document.getElementById('r-title').innerText = "LAPORAN LOGBOOK TAHUNAN";
-                document.getElementById('r-periode').innerText = `Periode Tahun: ${thn}`;
+    const { data: logs } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).gte('tanggal', startDate).lte('tanggal', endDate);
+    const { data: allLogs } = await _supabase.from('logbook_harian').select('*').eq('user_id', currentUser.id);
+    
+    let html = `<table><thead>`;
+    
+    // --- MODE 1: MATRIKS BULANAN ---
+    if(mode === 'matriks') {
+        const totalDays = new Date(thn, bln + 1, 0).getDate();
+        html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Real | Sisa)</th><th colspan="${totalDays}">Tanggal</th><th rowspan="2">Total</th><th rowspan="2">Link Bukti</th></tr><tr>`;
+        for(let d=1; d<=totalDays; d++) html += `<th class="w-6">${d}</th>`;
+        html += `</tr></thead><tbody>`;
+        
+        masterKamus.forEach((k, i) => {
+            let totalBulanIni = 0;
+            const target = k.target_tahunan || 0;
+            const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id == k.id).reduce((a,b) => a + (b.qty || 0), 0);
+            const sisa = target - realisasiKumulatif;
+            
+            html += `<tr><td class="text-center">${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-blue-600 font-bold">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
+            
+            for(let d=1; d<=totalDays; d++) {
+                const dayStr = `${thn}-${String(bln+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const qtyDay = (logs || []).filter(l => l.kegiatan_id == k.id && l.tanggal === dayStr).reduce((a,b) => a + (b.qty || 0), 0);
+                totalBulanIni += qtyDay;
+                html += `<td class="text-center">${qtyDay || ''}</td>`;
+            }
+            html += `<td class="font-bold text-center bg-slate-50">${totalBulanIni}</td>
+                     <td class="text-center"><a href="${k.link_bukti_dukung || '#'}" target="_blank" style="color:blue; font-size:8pt">Buka Bukti</a></td></tr>`;
+        });
+
+    // --- MODE 2: TRIWULAN ---
+    } else if(mode === 'triwulan') {
+        const startMonth = (tw - 1) * 3;
+        html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Real | Sisa)</th><th colspan="3">Bulan</th><th rowspan="2">Total TW</th><th rowspan="2">Hasil Kerja</th></tr>
+                 <tr><th>${listBulan[startMonth]}</th><th>${listBulan[startMonth+1]}</th><th>${listBulan[startMonth+2]}</th></tr></thead><tbody>`;
+        
+        masterKamus.forEach((k, i) => {
+            const target = k.target_tahunan || 0;
+            const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id == k.id).reduce((a,b) => a + (b.qty || 0), 0);
+            
+            let twTotal = 0;
+            let mValues = [];
+            for(let m=0; m<3; m++) {
+                const curM = startMonth + m;
+                const mQty = (logs || []).filter(l => {
+                    const d = new Date(l.tanggal);
+                    return l.kegiatan_id == k.id && d.getMonth() === curM;
+                }).reduce((a,b) => a + (b.qty || 0), 0);
+                mValues.push(mQty);
+                twTotal += mQty;
             }
 
-            const { data: logs } = await _supabase.from('logbook_harian').select('*, kamus_kegiatan(*)').eq('user_id', currentUser.id).gte('tanggal', startDate).lte('tanggal', endDate);
-            const { data: allLogs } = await _supabase.from('logbook_harian').select('*').eq('user_id', currentUser.id);
+            html += `<tr><td class="text-center">${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-blue-600 font-bold">T: ${target} | R: ${realisasiKumulatif} | S: ${target-realisasiKumulatif}</div></td>
+                     <td class="text-center">${mValues[0] || ''}</td><td class="text-center">${mValues[1] || ''}</td><td class="text-center">${mValues[2] || ''}</td>
+                     <td class="font-bold text-center">${twTotal}</td><td class="text-center">${k.hasil_kerja || '-'}</td></tr>`;
+        });
+
+    // --- MODE 3: TAHUNAN ---
+    } else if(mode === 'tahunan') {
+        html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Real | Sisa)</th><th colspan="12">Bulan</th><th rowspan="2">Total Thn</th></tr>
+                 <tr>`;
+        for(let m=0; m<12; m++) html += `<th style="font-size:7pt">${listBulan[m].substring(0,3)}</th>`;
+        html += `</tr></thead><tbody>`;
+
+        masterKamus.forEach((k, i) => {
+            const target = k.target_tahunan || 0;
+            const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id == k.id).reduce((a,b) => a + (b.qty || 0), 0);
             
-            let html = `<table><thead>`;
-            
-            if(mode === 'matriks') {
-                const totalDays = new Date(thn, bln + 1, 0).getDate();
-                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="${totalDays}">Tanggal</th><th rowspan="2">Total Bln Ini</th></tr><tr>`;
-                for(let d=1; d<=totalDays; d++) html += `<th class="w-6">${d}</th>`;
-                html += `</tr></thead><tbody>`;
+            let thnTotal = 0;
+            let rowBulan = "";
+            for(let m=0; m<12; m++) {
+                const mQty = (logs || []).filter(l => {
+                    const d = new Date(l.tanggal);
+                    return l.kegiatan_id == k.id && d.getMonth() === m;
+                }).reduce((a,b) => a + (b.qty || 0), 0);
+                thnTotal += mQty;
+                rowBulan += `<td class="text-center" style="font-size:8pt">${mQty || ''}</td>`;
+            }
+
+            html += `<tr><td class="text-center">${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-blue-600 font-bold">T: ${target} | R: ${realisasiKumulatif} | S: ${target-realisasiKumulatif}</div></td>
+                     ${rowBulan}<td class="font-bold text-center">${thnTotal}</td></tr>`;
+        });
+
+    // --- MODE 4: DETAIL HARIAN ---
+    } else if(mode === 'harian_print') {
+        html += `<tr><th>No</th><th>Tanggal</th><th>Butir Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th><th>Bukti</th></tr></thead><tbody>`;
+        (logs || []).sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal)).forEach((l, i) => {
+            html += `<tr><td class="text-center">${i+1}</td><td class="text-center">${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan || '-'}</td><td class="text-center">${l.no_rm || '-'}</td><td class="text-center">${l.jam_mulai} - ${l.jam_selesai}</td><td class="text-center">${l.qty}</td><td class="text-center"><a href="${l.kamus_kegiatan?.link_bukti_dukung}" target="_blank">Link</a></td></tr>`;
+        });
+    }
+    
+    html += `</tbody></table>`;
+    document.getElementById('rekap-table-container').innerHTML = html;
+}
+
+        // ... kode-kode Anda yang lain ...
+
+// =========================================================
+// FITUR CETAK PDF, CETAK HARIAN & EXPORT EXCEL (LENGKAP)
+// =========================================================
+
+function printRekap() {
+    const areaCetak = document.getElementById('sec-rekap');
+    if (!areaCetak) return alert("Area cetak tidak ditemukan");
+
+    const windowPrint = window.open('', '', 'width=1100,height=900');
+    
+    windowPrint.document.write(`
+        <html>
+        <head>
+            <title>Cetak Logbook - ${profileData.nama_lengkap}</title>
+            <style>
+                @page { size: landscape; margin: 1cm; }
+                body { font-family: "Arial", sans-serif; font-size: 9pt; background: #fff; margin: 0; padding: 20px; }
                 
-                masterKamus.forEach((k, i) => {
-                    let totalBulanIni = 0;
-                    const target = k.target_tahunan || 0;
-                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
-                    const sisa = target - realisasiKumulatif;
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
-                    for(let d=1; d<=totalDays; d++) {
-                        const dayStr = `${thn}-${String(bln+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        const dayQty = (logs || []).filter(l => l.kegiatan_id === k.id && l.tanggal === dayStr).reduce((a,b) => a + b.qty, 0);
-                        totalBulanIni += dayQty;
-                        html += `<td>${dayQty || ''}</td>`;
-                    }
-                    html += `<td class="font-bold">${totalBulanIni}</td></tr>`;
-                });
+                .text-center { text-align: center; }
+                .text-bold { font-weight: bold; }
+                .mb-10 { margin-bottom: 10px; }
+                h2, h3 { margin: 1px 0; text-transform: uppercase; }
 
-            } else if(mode === 'triwulan') {
-                const startMonthIdx = (tw - 1) * 3;
-                const monthsInTw = [listBulan[startMonthIdx], listBulan[startMonthIdx+1], listBulan[startMonthIdx+2]];
+                /* Header Identitas Atas - Rata Kiri & Kanan */
+                .header-wrapper { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
+                .header-wrapper td { vertical-align: top; border: none !important; padding: 0; }
+                
+                .sub-identitas { border-collapse: collapse; width: auto; }
+                .sub-identitas td { border: none !important; padding: 1px 0; font-size: 9pt; }
+                .label-col { width: 85px; }
+                .pembatas-col { width: 15px; text-align: center; }
 
-                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="3">Bulan</th><th rowspan="2">Total Triwulan</th><th rowspan="2">Output</th></tr><tr>`;
-                monthsInTw.forEach(mName => html += `<th>${mName}</th>`);
-                html += `</tr></thead><tbody>`;
+                /* Tabel Utama */
+                table.main-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                .main-table th, .main-table td { border: 1px solid black !important; padding: 3px; font-size: 8pt; }
+                .main-table th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+                .text-left-imp { text-align: left !important; }
 
-                masterKamus.forEach((k, i) => {
-                    let totalTw = 0;
-                    const target = k.target_tahunan || 0;
-                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
-                    const sisa = target - realisasiKumulatif;
+                /* Bagian Tanda Tangan */
+                .ttd-section { margin-top: 20px; width: 100%; }
+                .ttd-table { width: 100%; border-collapse: collapse; border: none !important; }
+                .ttd-table td { border: none !important; width: 50%; text-align: center; vertical-align: top; font-size: 9pt; }
+                .spacer-ttd { height: 60px; }
+                .underline { text-decoration: underline; }
 
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
-                    
-                    for(let j=0; j<3; j++) {
-                        const currentMonthIdx = startMonthIdx + j;
-                        const blnQty = (logs || []).filter(l => {
-                            const d = new Date(l.tanggal);
-                            return l.kegiatan_id === k.id && d.getMonth() === currentMonthIdx;
-                        }).reduce((a,b) => a + b.qty, 0);
-                        totalTw += blnQty;
-                        html += `<td>${blnQty || ''}</td>`;
-                    }
-                    html += `<td class="font-bold">${totalTw}</td><td>${k.hasil_kerja}</td></tr>`;
-                });
+                .no-print, button { display: none !important; }
+                
+                /* Supaya header tabel muncul di tiap halaman jika panjang */
+                thead { display: table-header-group; }
+                tr { page-break-inside: avoid; }
+            </style>
+        </head>
+        <body>
+            <div class="text-center mb-10">
+                <h2 class="text-bold">${profileData.instansi || 'RSUD MERAH PUTIH'}</h2>
+                <h3 class="text-bold">${document.getElementById('r-title').innerText}</h3>
+                <p class="text-bold" style="margin: 2px 0;">${document.getElementById('r-periode').innerText}</p>
+            </div>
 
-            } else if(mode === 'tahunan') {
-                html += `<tr><th rowspan="2">No</th><th rowspan="2">Butir Kegiatan (Target | Realisasi | Sisa)</th><th colspan="12">Bulan</th><th rowspan="2">Total Tahun</th></tr><tr>`;
-                listBulan.forEach(b => html += `<th class="text-[7pt]">${b.substring(0,3)}</th>`);
-                html += `</tr></thead><tbody>`;
+            <table class="header-wrapper">
+                <tr>
+                    <td align="left">
+                        <table class="sub-identitas">
+                            <tr>
+                                <td class="label-col">Nama</td><td class="pembatas-col">:</td>
+                                <td class="text-bold">${profileData.nama_lengkap || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">NIP</td><td>:</td>
+                                <td>${profileData.nip || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Gol/Ruang</td><td>:</td>
+                                <td>${profileData.golongan || '-'}</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td align="right">
+                        <table class="sub-identitas" style="margin-left: auto;">
+                            <tr>
+                                <td class="label-col" style="text-align: left;">Jabatan</td><td class="pembatas-col">:</td>
+                                <td style="text-align: left;">${profileData.jabatan || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col" style="text-align: left;">Unit Kerja</td><td>:</td>
+                                <td style="text-align: left;">${profileData.unit_kerja || '-'}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col" style="text-align: left;">Kab/Kota</td><td>:</td>
+                                <td style="text-align: left;">${profileData.kota || '-'}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
 
-                masterKamus.forEach((k, i) => {
-                    let totalTahunIni = 0;
-                    const target = k.target_tahunan || 0;
-                    const realisasiKumulatif = (allLogs || []).filter(l => l.kegiatan_id === k.id).reduce((a,b) => a + b.qty, 0);
-                    const sisa = target - realisasiKumulatif;
+            <div class="main-table-container">
+                ${document.querySelector('#rekap-table-container').innerHTML.replace('<table>', '<table class="main-table">')}
+            </div>
 
-                    html += `<tr><td>${i+1}</td><td class="text-left-imp"><div>${k.nama_kegiatan}</div><div class="text-[6pt] text-gray-500">T: ${target} | R: ${realisasiKumulatif} | S: ${sisa}</div></td>`;
-                    
-                    for(let m=0; m<12; m++) {
-                        const blnQty = (logs || []).filter(l => {
-                            const d = new Date(l.tanggal);
-                            return l.kegiatan_id === k.id && d.getMonth() === m;
-                        }).reduce((a,b) => a + b.qty, 0);
-                        totalTahunIni += blnQty;
-                        html += `<td>${blnQty || ''}</td>`;
-                    }
-                    html += `<td class="font-bold">${totalTahunIni}</td></tr>`;
-                });
+            <div class="ttd-section">
+                <table class="ttd-table">
+                    <tr>
+                        <td>
+                            Mengetahui,<br>
+                            ${profileData.atasan_jabatan || 'Atasan Langsung'}<br><br>
+                            <div class="spacer-ttd"></div>
+                            <span class="text-bold underline">${profileData.atasan_nama || '-'}</span><br>
+                            NIP. ${profileData.atasan_nip || '-'}
+                        </td>
+                        <td>
+                            ${profileData.kota || 'Kota'}, ${document.getElementById('r-tgl-cetak').innerText.split(',')[1] || ''}<br>
+                            Pejabat Fungsional<br><br>
+                            <div class="spacer-ttd"></div>
+                            <span class="text-bold underline">${profileData.nama_lengkap || '-'}</span><br>
+                            NIP. ${profileData.nip || '-'}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </body>
+        </html>
+    `);
 
-            } else if(mode === 'harian_print') {
-                html = `<table><thead><tr><th>No</th><th>Tanggal</th><th>Butir Kegiatan</th><th>No. RM</th><th>Waktu</th><th>Qty</th></tr></thead><tbody>`;
-                (logs || []).forEach((l, i) => {
-                    html += `<tr><td>${i+1}</td><td>${l.tanggal}</td><td class="text-left-imp">${l.kamus_kegiatan?.nama_kegiatan}</td><td>${l.no_rm}</td><td>${l.jam_mulai} - ${l.jam_selesai}</td><td>${l.qty}</td></tr>`;
-                });
-            }
+    windowPrint.document.close();
+    windowPrint.focus();
+    
+    setTimeout(() => {
+        windowPrint.print();
+        windowPrint.close();
+    }, 750);
+}
 
-            html += `</tbody></table>`;
-            document.getElementById('rekap-table-container').innerHTML = html;
-        }
+async function cetakHarian() {
+    // 1. Jalankan render rekap mode harian terlebih dahulu agar data RM disusun
+    if (typeof renderRekap === "function") {
+        await renderRekap('harian_print');
+    }
 
-        function exportToExcel(containerId, fileName) {
-            const table = document.getElementById(containerId).querySelector('table');
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Laporan"});
-            XLSX.writeFile(wb, `${fileName}_${new Date().getTime()}.xlsx`);
-        }
+    // 2. Beri jeda sangat singkat agar tabel selesai muncul di layar
+    setTimeout(() => {
+        // 3. Panggil fungsi print yang sudah kita buat
+        printRekap();
+    }, 500);
+}
+
+function exportToExcel() {
+    const fileName = 'Logbook_' + (profileData.nama_lengkap || 'User') + '_' + new Date().getTime() + '.xls';
+    const title = document.getElementById('r-title').innerText;
+    const periode = document.getElementById('r-periode').innerText;
+    const tableContent = document.querySelector('#rekap-table-container').innerHTML;
+
+    const template = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <style>
+                table { border-collapse: collapse; width: 100%; }
+                .main-data th { border: 0.5pt solid black; background-color: #f2f2f2; font-weight: bold; text-align: center; }
+                .main-data td { border: 0.5pt solid black; vertical-align: middle; }
+                .identitas-wrapper td { border: none !important; padding: 0; }
+                .sub-identitas td { border: none !important; padding: 1px; font-size: 10pt; }
+                .text-center { text-align: center; }
+                .text-bold { font-weight: bold; }
+                .underline { text-decoration: underline; }
+                /* Menghindari angka NIP berubah format di Excel */
+                .str { mso-number-format:"\\@"; } 
+            </style>
+        </head>
+        <body>
+            <table>
+                <tr><td colspan="15" class="text-center text-bold" style="font-size: 14pt;">${profileData.instansi || ''}</td></tr>
+                <tr><td colspan="15" class="text-center text-bold" style="font-size: 12pt;">${title}</td></tr>
+                <tr><td colspan="15" class="text-center text-bold">${periode}</td></tr>
+                <tr><td colspan="15">&nbsp;</td></tr>
+            </table>
+
+            <table class="identitas-wrapper">
+                <tr>
+                    <td align="left">
+                        <table class="sub-identitas">
+                            <tr><td>Nama</td><td>:</td><td class="text-bold">${profileData.nama_lengkap || '-'}</td></tr>
+                            <tr><td>NIP</td><td>:</td><td class="str">${profileData.nip || '-'}</td></tr>
+                            <tr><td>Gol/Ruang</td><td>:</td><td>${profileData.golongan || '-'}</td></tr>
+                        </table>
+                    </td>
+                    <td align="right">
+                        <table class="sub-identitas" align="right">
+                            <tr><td align="left">Jabatan</td><td>:</td><td align="left">${profileData.jabatan || '-'}</td></tr>
+                            <tr><td align="left">Unit Kerja</td><td>:</td><td align="left">${profileData.unit_kerja || '-'}</td></tr>
+                            <tr><td align="left">Kab/Kota</td><td>:</td><td align="left">${profileData.kota || '-'}</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <br>
+            <div class="main-data">${tableContent}</div>
+            <br>
+
+            <table>
+                <tr>
+                    <td colspan="5" class="text-center">
+                        Mengetahui,<br>${profileData.atasan_jabatan || ''}<br><br><br><br>
+                        <span class="text-bold underline">${profileData.atasan_nama || '-'}</span><br>
+                        NIP. <span class="str">${profileData.atasan_nip || '-'}</span>
+                    </td>
+                    <td colspan="5"></td>
+                    <td colspan="5" class="text-center">
+                        ${profileData.kota || 'Kota'}, ${document.getElementById('r-tgl-cetak').innerText.split(',')[1] || ''}<br>
+                        Pejabat Fungsional<br><br><br><br>
+                        <span class="text-bold underline">${profileData.nama_lengkap || '-'}</span><br>
+                        NIP. <span class="str">${profileData.nip || '-'}</span>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>`;
+
+    const blob = new Blob([template], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function handleLupaPassword() {
+    // Ganti dengan nomor WhatsApp Admin (awali dengan 62)
+    const nomorAdmin = "6282327062424"; 
+    const pesan = encodeURIComponent("Halo Admin, saya lupa password logbook. Mohon bantu reset password untuk akun saya.");
+    
+    window.open(`https://wa.me/${nomorAdmin}?text=${pesan}`, '_blank');
+}
+
+</script>
     </script>
 </body>
 </html>
